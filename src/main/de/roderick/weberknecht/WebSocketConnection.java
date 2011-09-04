@@ -16,9 +16,9 @@
 
 package de.roderick.weberknecht;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URI;
@@ -39,7 +39,7 @@ public class WebSocketConnection
 	
 	private Socket socket = null;
 	private InputStream input = null;
-	private PrintStream output = null;
+	private BufferedOutputStream output = null;
 	
 	private WebSocketReceiver receiver = null;
 	private WebSocketHandshake handshake = null;
@@ -82,13 +82,14 @@ public class WebSocketConnection
 			
 			socket = createSocket();
 			input = socket.getInputStream();
-			output = new PrintStream(socket.getOutputStream());
+			output = new BufferedOutputStream(socket.getOutputStream());
 			
 			output.write(handshake.getHandshake());
+			output.flush();
 						
 			boolean handshakeComplete = false;
 			boolean header = true;
-			int len = 1000;
+			int len = 2000;
 			byte[] buffer = new byte[len];
 			int pos = 0;
 			ArrayList<String> handshakeLines = new ArrayList<String>();
@@ -157,7 +158,7 @@ public class WebSocketConnection
 			output.write(0x00);
 			output.write(data.getBytes(("UTF-8")));
 			output.write(0xff);
-			output.write("\r\n".getBytes());
+			output.flush();
 		}
 		catch (UnsupportedEncodingException uee) {
 			throw new WebSocketException("error while sending text data: unsupported encoding", uee);
@@ -166,26 +167,7 @@ public class WebSocketConnection
 			throw new WebSocketException("error while sending text data", ioe);
 		}
 	}
-	
-	
-//	public synchronized void send(byte[] data)
-//			throws WebSocketException
-//	{
-//		if (!connected) {
-//			throw new WebSocketException("error while sending binary data: not connected");
-//		}
-//		
-//		try {
-//			output.write(0x80);
-//			output.write(data.length);
-//			output.write(data);
-//			output.write("\r\n".getBytes());
-//		}
-//		catch (IOException ioe) {
-//			throw new WebSocketException("error while sending binary data: ", ioe);
-//		}
-//	}
-	
+
 	
 	public void handleReceiverError()
 	{
@@ -227,8 +209,9 @@ public class WebSocketConnection
 		}
 		
 		try {
-			output.write(0xff00);
-			output.write("\r\n".getBytes());
+			output.write(0xff);
+			output.write(0x00);
+			output.flush();
 		}
 		catch (IOException ioe) {
 			throw new WebSocketException("error while sending close handshake", ioe);
