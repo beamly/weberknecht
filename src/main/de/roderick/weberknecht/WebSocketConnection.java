@@ -25,7 +25,6 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 
@@ -44,6 +43,11 @@ public class WebSocketConnection
 	private WebSocketReceiver receiver = null;
 	private WebSocketHandshake handshake = null;
 	
+	private static SSLSocketFactory sslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+	
+	public static void setDefaultSSLSocketFactory(SSLSocketFactory socketFactory) {
+		sslSocketFactory = socketFactory;
+	}
 	
 	public WebSocketConnection(URI url)
 			throws WebSocketException
@@ -249,8 +253,7 @@ public class WebSocketConnection
 				port = 443;
 			}
 			try {
-				SocketFactory factory = SSLSocketFactory.getDefault();
-				socket = factory.createSocket(host, port);
+				socket = sslSocketFactory.createSocket(host, port);
 			}
 			catch (UnknownHostException uhe) {
 				throw new WebSocketException("unknown host: " + host, uhe);
